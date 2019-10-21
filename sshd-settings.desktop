@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=sshd settings
+Type=Application
+Comment=Settings for the sshd deamon
+Terminal=false
+Exec=gnome-terminal --hide-menubar --geometry="43x8" --zoom=1.0 --title="sshd settings" -- sshd-settings && while read x; do :; done
+Icon=sshd-settings.png
+Categories=ConsoleOnly;System;
+GenericName=sshds
+Keywords=system
+NoDisplay=false

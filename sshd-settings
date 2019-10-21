@@ -1,0 +1,118 @@
+#!/bin/bash
+#
+#  Copyright (C) 2019, lothrond  < lothrond AT posteo DOT us >
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# colors
+col0="\e[31m"
+col1="\e[32m"
+col2="\e[33m"
+res="\e[0m"
+
+[ $EDITOR ] || {
+    if which nano >& /dev/null; then
+        EDITOR=nano
+    elif which vim >& /dev/null; then
+        EDITOR=vim
+    else
+        EDITOR=vi
+    fi
+}
+
+function has_root() {
+    if [ $UID -eq 0 ]; then
+        return 0
+    fi
+
+    echo -e "${col0}Needs root...${res}\n"
+    return 1
+}
+
+function _head_() {
+    clear
+    echo -e "${col0}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${res}"
+    echo
+}
+
+function do_view() {
+    _head_
+    echo -e "${col1}sshd:${res}"
+    rc-service sshd status
+    echo
+
+    return_menu
+}
+
+function invalid_select() {
+    _head_
+    echo -e "${col0}Invalid selection${res}\n"
+}
+
+function do_set() {
+    local toggle
+
+    _head_
+    echo -e "${col0} 0) ${col1}on:${res}  turn on sshd"
+    echo -e "${col0} 1) ${col1}off:${res} turn off sshd"
+    echo
+    echo -e -n "Please make a selection ${col0}[0-1]:${res} "
+
+    while read toggle; do case "$toggle" in
+        0) _head_; sudo rc-service sshd start; echo; break;;
+        1) _head_; sudo rc-service sshd stop; echo; break;;
+        *) invalid_select; break;;
+    esac done
+
+    return_menu
+}
+
+function gnome_edit() {
+    gnome-terminal --maximize --hide-menubar --quiet --title="sshd settings: editing /etc/ssh/sshd_config" -- \
+        sudo $EDITOR /etc/ssh/sshd_config
+}
+
+function main_menu() {
+    _head_
+    echo -e "${col0} 0) ${col1}view:${res}   view sshd status"
+    echo -e "${col0} 1) ${col1}set: ${res}   toggle sshd on/off"
+    echo -e "${col0} 2) ${col1}config:${res} configure sshd"
+    echo
+    echo -e -n "Please make a selection: ${col0}[0-2]:${res} "
+
+    while read selection; do case "$selection" in
+        0) do_view; break;;
+        1) do_set; break;;
+        2) gnome_edit; echo; return_menu; break;;
+        *) invalid_select; break;;
+    esac done
+
+    echo -e -n "${col2}(Press any button to exit)${res}"
+    while read x; do case "$x" in
+        *) exit 0; break;;
+    esac done
+}
+
+function return_menu() {
+    echo -e -n "${col2}(Press any button to return)${res}"
+    while read x; do case "$x" in
+        *) main_menu; break;;
+    esac done
+}
+
+if main_menu; then
+    exit 0
+fi
+
+exit 1
